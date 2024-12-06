@@ -1,21 +1,119 @@
--- Define a function to create the rainbow color effect
-local function getRainbowColor(t)
-    local hue = (t % 360) / 360
-    return Color3.fromHSV(hue, 1, 1)
-end
+-- Services
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
 
--- Function to update the color of snow parts
-local function updateSnowParts()
-    for _, part in ipairs(workspace:GetDescendants()) do
-        if part:IsA("BasePart") and part.Name:lower():find("snow") then
-            part.Material = Enum.Material.Neon
-            part.Color = getRainbowColor(tick())
-        end
+-- Create GUI elements
+local screenGui = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui"))
+screenGui.Name = "TranslationUI"
+
+local frame = Instance.new("Frame", screenGui)
+frame.Size = UDim2.new(0, 300, 0, 200)
+frame.Position = UDim2.new(0.5, -150, 0.5, -100)
+frame.AnchorPoint = Vector2.new(0.5, 0.5)
+frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+frame.BorderSizePixel = 0
+frame.Visible = true
+
+-- Make the corners rounded
+local uiCorner = Instance.new("UICorner", frame)
+uiCorner.CornerRadius = UDim.new(0, 10)
+
+-- Title label
+local titleLabel = Instance.new("TextLabel", frame)
+titleLabel.Text = "Translation UI"
+titleLabel.Size = UDim2.new(1, 0, 0, 30)
+titleLabel.Position = UDim2.new(0, 0, 0, 0)
+titleLabel.BackgroundTransparency = 1
+titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleLabel.TextScaled = true
+titleLabel.Font = Enum.Font.SourceSansBold
+
+-- TextBox for input
+local inputField = Instance.new("TextBox", frame)
+inputField.Size = UDim2.new(0.9, 0, 0, 30)
+inputField.Position = UDim2.new(0.05, 0, 0.4, 0)
+inputField.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+inputField.TextColor3 = Color3.fromRGB(255, 255, 255)
+inputField.Text = ""
+inputField.PlaceholderText = "Type here..."
+inputField.Font = Enum.Font.SourceSans
+inputField.TextScaled = true
+
+-- Rounded corners for TextBox
+local inputCorner = Instance.new("UICorner", inputField)
+inputCorner.CornerRadius = UDim.new(0, 5)
+
+-- X button to close
+local closeButton = Instance.new("TextButton", frame)
+closeButton.Size = UDim2.new(0, 30, 0, 30)
+closeButton.Position = UDim2.new(1, -35, 0, 5)
+closeButton.BackgroundColor3 = Color3.fromRGB(255, 50, 50)
+closeButton.Text = "X"
+closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+closeButton.Font = Enum.Font.SourceSansBold
+closeButton.TextScaled = true
+
+-- Rounded corners for close button
+local closeCorner = Instance.new("UICorner", closeButton)
+closeCorner.CornerRadius = UDim.new(0, 5)
+
+-- Draggable functionality
+local isDragging = false
+local dragStart, startPos
+
+frame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        isDragging = true
+        dragStart = input.Position
+        startPos = frame.Position
     end
+end)
+
+frame.InputChanged:Connect(function(input)
+    if isDragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local delta = input.Position - dragStart
+        frame.Position = UDim2.new(
+            startPos.X.Scale,
+            startPos.X.Offset + delta.X,
+            startPos.Y.Scale,
+            startPos.Y.Offset + delta.Y
+        )
+    end
+end)
+
+frame.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        isDragging = false
+    end
+end)
+
+-- Close button functionality
+closeButton.MouseButton1Click:Connect(function()
+    screenGui:Destroy()
+end)
+
+-- Translation functionality
+local function translateToSpanish(text)
+    -- Dummy translation (replace with an API call for real translation)
+    local translations = {
+        hello = "hola",
+        world = "mundo",
+        good = "bueno",
+        morning = "mañana"
+    }
+    local translatedText = {}
+    for word in text:gmatch("%w+") do
+        table.insert(translatedText, translations[word:lower()] or word)
+    end
+    return table.concat(translatedText, " ")
 end
 
--- Loop to constantly update the colors every second
-while true do
-    updateSnowParts()
-    wait(1)
-end
+inputField.FocusLost:Connect(function(enterPressed)
+    if enterPressed then
+        local message = inputField.Text
+        local translatedMessage = translateToSpanish(message)
+        game:GetService("ReplicatedStorage"):FindFirstChild("DefaultChatSystemChatEvents")
+            :FindFirstChild("SayMessageRequest"):FireServer(translatedMessage, "All")
+        inputField.Text = ""
+    end
+end)
