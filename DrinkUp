@@ -1,0 +1,21 @@
+-- Define a function to create the rainbow color effect
+local function getRainbowColor(t)
+    local hue = (t % 360) / 360
+    return Color3.fromHSV(hue, 1, 1)
+end
+
+-- Function to update the color of snow parts
+local function updateSnowParts()
+    for _, part in ipairs(workspace:GetDescendants()) do
+        if part:IsA("BasePart") and part.Name:lower():find("snow") then
+            part.Material = Enum.Material.Neon
+            part.Color = getRainbowColor(tick())
+        end
+    end
+end
+
+-- Loop to constantly update the colors every second
+while true do
+    updateSnowParts()
+    wait(1)
+end
